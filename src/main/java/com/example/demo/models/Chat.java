@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.TreeSet;
 
 public class Chat {
-    String id;
-    Boolean isDeleted;
-    ArrayList<String> messages;
-    TreeSet<String> setIdUsers;
+    public String id;
+    public Boolean isDeleted;
+    public ArrayList<String> messages;
+    public TreeSet<String> setIdUsers;
 
     public Chat(String id, Boolean isDeleted, ArrayList<String> messages, TreeSet<String> setIdUsers) {
         this.id = id;
@@ -15,4 +15,5 @@ public class Chat {
         this.messages = messages;
         this.setIdUsers = setIdUsers;
     }
+
 }

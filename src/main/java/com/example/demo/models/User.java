@@ -3,14 +3,14 @@ package com.example.demo.models;
 import java.util.ArrayList;
 
 public class User {
-    String id;
-    Boolean isAdmin;
-    String name;
-    String login;
-    String password;
-    ArrayList<Chat> chatArrayList = new ArrayList<>();
+    public String id;
+    public Boolean isAdmin;
+    public String name;
+    public String login;
+    public String password;
+    public ArrayList<String> chatArrayList = new ArrayList<>();
 
-    public User(String id, Boolean isAdmin, String name, String login, String password, ArrayList<Chat> chatArrayList) {
+    public User(String id, Boolean isAdmin, String name, String login, String password, ArrayList<String> chatArrayList) {
         this.id = id;
         this.isAdmin = isAdmin;
         this.name = name;
@@ -39,7 +39,7 @@ public class User {
         return password;
     }
 
-    public ArrayList<Chat> getChatArrayList() {
+    public ArrayList<String> getChatArrayList() {
         return chatArrayList;
     }
 }
