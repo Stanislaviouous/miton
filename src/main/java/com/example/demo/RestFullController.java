@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -34,7 +35,7 @@ public class RestFullController {
 
 
     // Конструктор конроллера - деиствия при запуске программы
-    public RestFullController () {
+    public RestFullController() {
         String s = "", s1 = "", s2 = "", s3 = "";
         Gson gson = new Gson();
         try {
@@ -44,18 +45,53 @@ public class RestFullController {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        usersArrayList = gson.fromJson(s1, new TypeToken<ArrayList<User>>(){}.getType());
-        chatsArrayList = gson.fromJson(s2, new TypeToken<ArrayList<Chat>>(){}.getType());
-        messagesArrayList = gson.fromJson(s3, new TypeToken<ArrayList<Message>>(){}.getType());
+        usersArrayList = gson.fromJson(s1, new TypeToken<ArrayList<User>>() {
+        }.getType());
+        chatsArrayList = gson.fromJson(s2, new TypeToken<ArrayList<Chat>>() {
+        }.getType());
+        messagesArrayList = gson.fromJson(s3, new TypeToken<ArrayList<Message>>() {
+        }.getType());
 
-        usersArrayList.add(new User("U0", true, "Матвей Дыгало", "muton", "PASSWORD", new ArrayList<>()));
+    }
 
+    public static void update(String nameFile) {
+        Gson gson = new Gson();
+        FileWriter fw;
+        ArrayList<?> ent = new ArrayList<>();
+        switch (nameFile) {
+            case "users":
+                ent =  usersArrayList;
+                break;
+            case "chats":
+                ent =  chatsArrayList;
+                break;
+            case "messages":
+                ent =  messagesArrayList;
+                break;
+            default:
+                ent =  new ArrayList<>();
+        }
+        try {
+            fw = new FileWriter("src/main/java/com/example/demo/files/" + nameFile + ".json");
+            String l = "[";
+            for (int i = 0; i < ent.size(); i++) {
+                if (i == ent.size() - 1) {
+                    l += gson.toJson(ent.get(i));
+                } else {
+                    l += gson.toJson(ent.get(i)) + ",";
+                }
+            }
+            fw.write(l + "]");
+            fw.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // http://localhost:8080/authorization?login=loginExample&password=220512281
     @RequestMapping(
             value = "/authorization",
-            params = { "login", "password"},
+            params = {"login", "password"},
             method = GET)
     @ResponseBody
     public String authorization(
@@ -81,8 +117,9 @@ public class RestFullController {
             @RequestParam("name") String name,
             @RequestParam("login") String login,
             @RequestParam("password") String password) {
-        int n =  usersArrayList.size();
+        int n = usersArrayList.size();
         usersArrayList.add(new User(("U" + n), false, name, login, password, new ArrayList<>()));
+        update("users");
         return gson.toJson(usersArrayList.get(n));
     }
 
@@ -95,13 +132,13 @@ public class RestFullController {
     public String createNewChatWithTwoUsers(
             @RequestParam("user1") String user1,
             @RequestParam("user2") String user2) {
-        int n =  usersArrayList.size();
+        int n = usersArrayList.size();
         try {
             chatsArrayList.add(new Chat(("C" + n), false, new ArrayList<String>(), new TreeSet<>(List.of(user1, user2))));
-        }
-        catch (Error | Exception e){
+        } catch (Error | Exception e) {
             return "false";
         }
+        update("chats");
         return "true";
     }
 
@@ -116,14 +153,14 @@ public class RestFullController {
             @RequestParam("user2") String user2,
             @RequestParam("text") String text,
             @RequestParam("chatId") String chatId) {
-        int n =  messagesArrayList.size();
+        int n = messagesArrayList.size();
         try {
             messagesArrayList.add(new Message(("M" + n), false, text, new Date().getTime(), user1, user2, new TreeSet<>()));
             chatsArrayList.get(n).messages.add(("M" + n));
-        }
-        catch (Error | Exception e){
+        } catch (Error | Exception e) {
             return "false";
         }
+        update("messages");
         return "true";
     }
 
@@ -156,7 +193,7 @@ public class RestFullController {
         ArrayList<String> f = usersArrayList.get(getIdFromId(userId)).chatArrayList;
         return (Iterable<Chat>) chatsArrayList
                 .stream()
-                .filter(it ->f.contains(it.id));
+                .filter(it -> f.contains(it.id));
     }
 
     @RequestMapping(
@@ -176,7 +213,7 @@ public class RestFullController {
     }
     //
 
-    public int getIdFromId (String s){
+    public int getIdFromId(String s) {
         return Integer.parseInt(s.substring(1));
     }
 
