@@ -179,8 +179,7 @@ public class RestFullController {
     }
     //
 
-    private int getIdFromId(String s) {
-        return Integer.parseInt(s.substring(1));
+    public static <T extends ID> T findInListById(ArrayList<T> list, String objId) {
+        return list.stream().filter(listObj -> listObj.id.equals(objId)).findFirst().orElse(null);
     }
-
 }

@@ -2,25 +2,20 @@ package com.example.demo.models;
 
 import java.util.ArrayList;
 
-public class User {
-    public String id;
+public class User extends ID{
     public Boolean isAdmin;
     public String name;
     public String login;
     public String password;
-    public ArrayList<String> chatArrayList = new ArrayList<>();
+    public ArrayList<String> chats;
 
-    public User(String id, Boolean isAdmin, String name, String login, String password, ArrayList<String> chatArrayList) {
-        this.id = id;
+    public User(String id, Boolean isAdmin, String name, String login, String password, ArrayList<String> chats) {
+        super(id);
         this.isAdmin = isAdmin;
         this.name = name;
         this.login = login;
         this.password = password;
-        this.chatArrayList = chatArrayList;
-    }
-
-    public String getId() {
-        return id;
+        this.chats = chats;
     }
 
     public Boolean getAdmin() {
@@ -39,7 +34,15 @@ public class User {
         return password;
     }
 
-    public ArrayList<String> getChatArrayList() {
-        return chatArrayList;
+    public ArrayList<String> getChats() {
+        return chats;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void addChat(Chat chat) {
+        this.chats.add(chat.id);
     }
 }

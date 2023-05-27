@@ -3,17 +3,16 @@ package com.example.demo.models;
 import java.util.ArrayList;
 import java.util.TreeSet;
 
-public class Chat {
-    public String id;
+public class Chat extends ID{
     public Boolean isDeleted;
     public ArrayList<String> messages;
-    public TreeSet<String> setIdUsers;
+    public TreeSet<String> parentUsers;
 
-    public Chat(String id, Boolean isDeleted, ArrayList<String> messages, TreeSet<String> setIdUsers) {
-        this.id = id;
+    public Chat(String id, Boolean isDeleted, ArrayList<String> messages, TreeSet<String> parentUsers) {
+        super(id);
         this.isDeleted = isDeleted;
         this.messages = messages;
-        this.setIdUsers = setIdUsers;
+        this.parentUsers = parentUsers;
     }
 
 }
