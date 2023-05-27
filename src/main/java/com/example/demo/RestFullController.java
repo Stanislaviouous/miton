@@ -6,7 +6,9 @@ import com.example.demo.models.Message;
 import com.example.demo.models.User;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.springframework.stereotype.Controller;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.FileWriter;
@@ -15,8 +17,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.TreeSet;
+import java.util.UUID;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @RestController
 public class RestFullController {
@@ -32,7 +36,6 @@ public class RestFullController {
     public static ArrayList<User> usersArrayList = new ArrayList<>();
     public static ArrayList<Chat> chatsArrayList = new ArrayList<>();
     public static ArrayList<Message> messagesArrayList = new ArrayList<>();
-    // public static ArrayList<User> userArrayList= new ArrayList<>();
 
     // Конструктор конроллера - деиствия при запуске программы
     public RestFullController() {
@@ -89,99 +92,160 @@ public class RestFullController {
         }
     }
 
-    // http://localhost:8080/authorization?login=loginExample&password=220512281
-    @GetMapping(value = "/authorization", params = {"login", "password"})
-    public String authorization(
-            @RequestParam("login") String login,
+    @PostMapping(value = "/authorization", params = { "id", "password" })
+    public ResponseEntity<String> authorization(@RequestParam("id") String id,
             @RequestParam("password") String password) {
-        for (User user : usersArrayList) {
-            if (user.getLogin().equals(login) &&
-                    user.getPassword().equals(password)) {
-                return user.getName() + "-";
-            }
+        User currentUser = usersArrayList.stream()
+                .filter(user -> user.getId().equals(id) && user.getPassword().equals(password)).findFirst()
+                .orElse(null);
+        return (currentUser == null) ? new ResponseEntity<String>("No user found", HttpStatus.UNAUTHORIZED)
+                : new ResponseEntity<String>(currentUser.isAdmin().toString(), HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/registration", params = { "name", "password" })
+    public ResponseEntity<String> registration(@RequestParam("name") String name,
+            @RequestParam("password") String password) {
+        String id = "U" + UUID.randomUUID();
+        User newUser = new User(id, false, name, password);
+        usersArrayList.add(newUser);
+        updateDB("users");
+        return authorization(id, password);
+    }
+
+    @PostMapping(value = "/createNewChat", params = { "userId1", "userId2" })
+    public ResponseEntity<String> createNewChat(@RequestParam("userId1") String userId1,
+            @RequestParam("userId2") String userId2) {
+        User user1, user2 = null;
+        try {
+            user1 = findInListById(usersArrayList, userId1);
+            user2 = findInListById(usersArrayList, userId2);
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<String>("No user(s) found", HttpStatus.BAD_REQUEST);
         }
-        return "false";
+        Chat newChat = new Chat(("C" + UUID.randomUUID()), new ArrayList<String>(List.of(userId1, userId2)));
+        chatsArrayList.add(newChat);
+        user1.addChat(newChat);
+        user2.addChat(newChat);
+        updateDB("chats");
+        updateDB("users");
+        return new ResponseEntity<String>(newChat.id, HttpStatus.OK);
     }
 
-    // http://localhost:8080/registration?name=Stas&login=loginExample1&password=passExample1
-    // http://localhost:8080/registration?name=Yuri&login=loginExample2&password=passExample2
-    @GetMapping(value = "/registration", params = {"name", "login", "password"})
-    public String registration(
-            @RequestParam("name") String name,
-            @RequestParam("login") String login,
-            @RequestParam("password") String password) {
-        int n = usersArrayList.size();
-        usersArrayList.add(new User(("U" + n), false, name, login, password, new ArrayList<>()));
-        update("users");
-        return gson.toJson(usersArrayList.get(n));
-    }
-
-    // http://localhost:8080/createNewChatWithTwoUsers?user1=Yuri&user2=Stas
-    @GetMapping(value = "/createNewChatWithTwoUsers", params = {"user1", "user2"})
-    public String createNewChatWithTwoUsers(
-            @RequestParam("user1") String user1,
-            @RequestParam("user2") String user2) {
-        int n = usersArrayList.size();
-
-        chatsArrayList
-                .add(new Chat(("C" + n), false, new ArrayList<String>(), new TreeSet<>(List.of(user1, user2))));
-
-
-        update("chats");
-        return "true";
-    }
-
-    // http://localhost:8080/createNewMessage?user1=Yuri&user2=Stas
-    @GetMapping(value = "/createNewMessage", params = {"user1", "user2", "text", "chatId"})
-    public String createNewMessage(
-            @RequestParam("user1") String user1,
-            @RequestParam("user2") String user2,
-            @RequestParam("text") String text,
-            @RequestParam("chatId") String chatId) {
-        int n = messagesArrayList.size();
-
-        messagesArrayList
-                .add(new Message(("M" + n), false, text, new Date().getTime(), user1, user2, new TreeSet<>()));
-        chatsArrayList.get(n).messages.add(("M" + n));
-
-        update("messages");
-        return "true";
+    @PostMapping(value = "/createNewMessage", params = { "userId1", "userId2",
+            "text", "chatId" })
+    public ResponseEntity<String> createNewMessage(@RequestParam("userId1") String userId1,
+            @RequestParam("userId2") String userId2,
+            @RequestParam("text") String text, @RequestParam("chatId") String chatId) {
+        Chat chat = null;
+        try {
+            findInListById(usersArrayList, userId1);
+            findInListById(usersArrayList, userId2);
+            chat = findInListById(chatsArrayList, chatId);
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<String>("No user(s) found, or chat does not exist", HttpStatus.BAD_REQUEST);
+        }
+        Message newMessage = new Message(("M" + UUID.randomUUID()), false, text, new Date().getTime(), chatId,
+                new ArrayList<String>(List.of(userId1,
+                        userId2)));
+        messagesArrayList.add(newMessage);
+        chat.addMessage(newMessage);
+        updateDB("messages");
+        updateDB("chats");
+        return new ResponseEntity<String>("PLACEHOLDER", HttpStatus.OK);
     }
 
     // Методы админа
     @GetMapping(value = "/getAllUsers")
-    public Iterable<User> getAllUsers() {
+    public ArrayList<User> getAllUsers() {
         return usersArrayList;
     }
 
     @GetMapping(value = "/getAllChats")
-    public Iterable<Chat> getAllChats() {
+    public ArrayList<Chat> getAllChats() {
         return chatsArrayList;
     }
-    //
 
-    // Методы Админа и Юзера
-    @GetMapping(value = "/getAllChatsByUser", params = {"userId"})
-    public Iterable<Chat> getAllChatsByUser(
-            @RequestParam("userId") String userId) {
-        ArrayList<String> f = usersArrayList.get(getIdFromId(userId)).chatArrayList;
-        return (Iterable<Chat>) chatsArrayList
-                .stream()
-                .filter(it -> f.contains(it.id));
+    @GetMapping(value = "/getMessageByText", params = { "text" })
+    public ArrayList<Message> getMessageByText(@RequestParam("text") String text) {
+        return (ArrayList<Message>)  messagesArrayList.stream().filter(message -> message.getText().contains(text))
+                .collect(Collectors.toList());
     }
 
-    @GetMapping(value = "/getAllCMessagesByChat", params = {"chatId"})
-    public Iterable<Message> getAllCMessagesByChat(
-            @RequestParam("chatId") String chatId) {
-        ArrayList<String> f = Objects.requireNonNull(chatsArrayList.stream()
-                .filter(it -> chatId.equals(it.id))
-                .findAny()
-                .orElse(null)).messages;
-        return (Iterable<Message>) messagesArrayList
-                .stream()
-                .filter(it -> f.contains(it.id));
+    // Admin and user methods, although User is handicapped at frontend
+    @GetMapping(value = "/getAllCMessagesByChat", params = { "chatId" })
+    public ArrayList<Message> getAllCMessagesByChat(@RequestParam("chatId") String chatId) {
+        ArrayList<String> messagesIds = findInListById(chatsArrayList, chatId).getMessagesIds();
+        return (ArrayList<Message>) messagesArrayList.stream().filter(message -> messagesIds.contains(message.id))
+                .collect(Collectors.toList());
     }
-    //
+
+    @GetMapping(value = "/getAllChatsByUser", params = { "userId" })
+    public ArrayList<Chat> getAllChatsByUser(@RequestParam("userId") String userId) {
+        ArrayList<String> chatsIds = findInListById(usersArrayList, userId).getChatsIds();
+        return (ArrayList<Chat>) chatsArrayList.stream().filter(chat -> chatsIds.contains(chat.id))
+                .collect(Collectors.toList());
+    }
+
+    @DeleteMapping(value = "/deleteUserData", params = { "userId" })
+    public ResponseEntity<String> deleteUserData(@RequestParam("userId") String userId) {
+        // this basically means that if nothing in usersArrayList is deleted, then
+        // there's no such user
+        if (!(usersArrayList.removeIf(user -> user.getId().equals(userId)))) {
+            return new ResponseEntity<String>("No user found", HttpStatus.BAD_REQUEST);
+        }
+        chatsArrayList.removeIf(chat -> chat.getUsersIds().contains(userId));
+        messagesArrayList.removeIf(message -> message.getUsersIds().contains(userId));
+        updateDB("users");
+        updateDB("chats");
+        updateDB("messages");
+
+        return new ResponseEntity<String>("Successfully deleted data for user " + userId, HttpStatus.OK);
+    }
+
+    @DeleteMapping(value = "/deleteMessage", params = { "messageId" })
+    public ResponseEntity<String> deleteMessage(@RequestParam("messageId") String messageId) {
+        Message message = null;
+        try {
+            message = findInListById(messagesArrayList, messageId);
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<String>("No message found", HttpStatus.BAD_REQUEST);
+        }
+        messagesArrayList.remove(message);
+        updateDB("messages");
+        Chat chat = findInListById(chatsArrayList, message.getChatId());
+        chat.deleteMessage(messageId);
+        // if, after deletion of the message, parent chat is empty, we should delete it
+        // completely - who needs empty chat after all?
+        if (chat.getMessagesIds().isEmpty()) {
+            chatsArrayList.remove(chat);
+            // this ugly mess is written so that we can update every user's chatlist (for
+            // those who had aforementioned chat in it)
+            usersArrayList.stream().filter(user -> chat.getUsersIds().contains(user.getId()))
+                    .forEach(user -> user.deleteChat(chat.getId()));
+            updateDB("users");
+        }
+        updateDB("chats");
+
+        return new ResponseEntity<String>("Successfully deleted message " + messageId, HttpStatus.OK);
+    }
+
+    @PatchMapping(value = "/patchPassword", params = { "userId", "oldPassword", "newPassword"
+    })
+    public ResponseEntity<String> patchPassword(@RequestParam("userId") String userId,
+            @RequestParam("oldPassword") String oldPassword, @RequestParam("newPassword") String newPassword) {
+        User user = null;
+        try {
+            user = findInListById(usersArrayList, userId);
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<String>("No user found", HttpStatus.BAD_REQUEST);
+        }
+        if (!(user.getPassword().equals(oldPassword))) {
+            return new ResponseEntity<String>("Old password does not match the input", HttpStatus.UNAUTHORIZED);
+        }
+        user.setPassword(newPassword);
+        updateDB("users");
+        return new ResponseEntity<String>("The new password has been set", HttpStatus.OK);
+    }
 
     // Helper function for finding User/Chat/Message object in
     // user-/chat-/message-ArrayList
