@@ -1,20 +1,21 @@
 package com.example.demo.models;
 
-import java.util.Collection;
-import java.util.TreeSet;
+import java.util.ArrayList;
 
 public class Message extends ID {
     private Boolean deleted;
     private String text;
     private Long time;
-    private TreeSet<String> usersIds;
+    private String chatId;
+    private ArrayList<String> usersIds;
 
-    public Message(String id, Boolean deleted, String text, Long time, Collection<String> usersIds) {
+    public Message(String id, Boolean deleted, String text, Long time, String chatId, ArrayList<String> usersIds) {
         super(id);
         this.deleted = deleted;
         this.text = text;
         this.time = time;
-        this.usersIds = (TreeSet<String>) usersIds;
+        this.chatId = chatId;
+        this.usersIds = (ArrayList<String>) usersIds;
     }
 
     /**
@@ -60,17 +61,31 @@ public class Message extends ID {
     }
 
     /**
-     * @return TreeSet<String> return the usersIds
+     * @return ArrayList<String> return the usersIds
      */
-    public TreeSet<String> getUsersIds() {
+    public ArrayList<String> getUsersIds() {
         return usersIds;
     }
 
     /**
      * @param usersIds the usersIds to set
      */
-    public void setUsersIds(TreeSet<String> usersIds) {
+    public void setUsersIds(ArrayList<String> usersIds) {
         this.usersIds = usersIds;
+    }
+
+    /**
+     * @return String return the chatId
+     */
+    public String getChatId() {
+        return chatId;
+    }
+
+    /**
+     * @param chatId the chatId to set
+     */
+    public void setChatId(String chatId) {
+        this.chatId = chatId;
     }
 
 }

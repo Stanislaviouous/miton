@@ -1,14 +1,13 @@
 package com.example.demo.models;
 
 import java.util.ArrayList;
-import java.util.TreeSet;
 
 public class Chat extends ID {
     private Boolean deleted;
     private ArrayList<String> messagesIds;
-    private TreeSet<String> usersIds;
+    private ArrayList<String> usersIds;
 
-    public Chat(String id, TreeSet<String> usersIds) {
+    public Chat(String id, ArrayList<String> usersIds) {
         super(id);
         this.deleted = false;
         this.messagesIds = new ArrayList<String>();
@@ -48,16 +47,16 @@ public class Chat extends ID {
     }
 
     /**
-     * @return TreeSet<String> return the usersIds
+     * @return ArrayList<String> return the usersIds
      */
-    public TreeSet<String> getUsersIds() {
+    public ArrayList<String> getUsersIds() {
         return usersIds;
     }
 
     /**
      * @param usersIds the usersIds to set
      */
-    public void setUsersIds(TreeSet<String> usersIds) {
+    public void setUsersIds(ArrayList<String> usersIds) {
         this.usersIds = usersIds;
     }
 
