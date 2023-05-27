@@ -60,4 +60,7 @@ public class Chat extends ID {
         this.usersIds = usersIds;
     }
 
+    public void deleteMessage(String messageId) {
+        this.messagesIds.remove(messageId);
+    }
 }

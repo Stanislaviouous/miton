@@ -76,4 +76,7 @@ public class User extends ID {
         this.chatsIds = chatsIds;
     }
 
+    public void deleteChat(String chatId) {
+        this.chatsIds.remove(chatId);
+    }
 }
