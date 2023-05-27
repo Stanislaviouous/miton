@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import com.example.demo.models.Chat;
+import com.example.demo.models.ID;
 import com.example.demo.models.Message;
 import com.example.demo.models.User;
 import com.google.gson.Gson;
@@ -12,8 +13,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
-// import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.TreeSet;
+import java.util.NoSuchElementException;
 
 @RestController
 public class RestFullController {
@@ -33,7 +36,7 @@ public class RestFullController {
 
     // Конструктор конроллера - деиствия при запуске программы
     public RestFullController() {
-        String s1 = "", s2 = "", s3 = "";
+        String s1, s2, s3;
         Gson gson = new Gson();
         try {
             s1 = new String(Files.readAllBytes(Paths.get(fileNameUsers)));
@@ -51,7 +54,7 @@ public class RestFullController {
 
     }
 
-    public static void update(String nameFile) throws RuntimeException{
+    private static void updateDB(String nameFile) {
         Gson gson = new Gson();
         FileWriter fw;
         ArrayList<?> ent = new ArrayList<>();
@@ -66,7 +69,8 @@ public class RestFullController {
                 ent = messagesArrayList;
                 break;
             default:
-                throw new IllegalArgumentException("Variable <ent> can take only \"users\",\"chats\" or \"messages\" values");
+                System.out.println(
+                        "Please, take notice of the fact that you're a retard since you're not using function as intended.");
         }
         try {
             fw = new FileWriter("src/main/java/com/example/demo/files/" + nameFile + ".json");
@@ -81,7 +85,7 @@ public class RestFullController {
             fw.write(l + "]");
             fw.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.out.println("WARNING, BIG SAD HAPPENED");
         }
     }
 
@@ -179,7 +183,9 @@ public class RestFullController {
     }
     //
 
-    public static <T extends ID> T findInListById(ArrayList<T> list, String objId) {
-        return list.stream().filter(listObj -> listObj.id.equals(objId)).findFirst().orElse(null);
+    // Helper function for finding User/Chat/Message object in
+    // user-/chat-/message-ArrayList
+    private static <T extends ID> T findInListById(ArrayList<T> list, String objId) throws NoSuchElementException {
+        return list.stream().filter(listObj -> listObj.id.equals(objId)).findFirst().orElseThrow();
     }
 }
