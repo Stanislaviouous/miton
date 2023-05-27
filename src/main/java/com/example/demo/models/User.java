@@ -2,20 +2,18 @@ package com.example.demo.models;
 
 import java.util.ArrayList;
 
-public class User extends ID{
+public class User extends ID {
     public Boolean isAdmin;
     public String name;
-    public String login;
     public String password;
     public ArrayList<String> chats;
 
-    public User(String id, Boolean isAdmin, String name, String login, String password, ArrayList<String> chats) {
+    public User(String id, Boolean isAdmin, String name, String password) {
         super(id);
         this.isAdmin = isAdmin;
         this.name = name;
-        this.login = login;
         this.password = password;
-        this.chats = chats;
+        this.chats = new ArrayList<String>();
     }
 
     public Boolean getAdmin() {
@@ -24,10 +22,6 @@ public class User extends ID{
 
     public String getName() {
         return name;
-    }
-
-    public String getLogin() {
-        return login;
     }
 
     public String getPassword() {

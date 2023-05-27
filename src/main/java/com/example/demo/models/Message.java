@@ -1,9 +1,6 @@
 package com.example.demo.models;
 
-import java.util.ArrayList;
-import java.util.TreeSet;
-
-public class Message extends ID{
+public class Message extends ID {
     public Boolean isDeleted;
     public String text;
     public Long time;
