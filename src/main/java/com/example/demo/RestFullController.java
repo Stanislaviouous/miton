@@ -1,26 +1,31 @@
 package com.example.demo;
 
-import com.example.demo.models.Chat;
-import com.example.demo.models.ID;
-import com.example.demo.models.Message;
-import com.example.demo.models.User;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.UUID;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.models.Chat;
+import com.example.demo.models.ID;
+import com.example.demo.models.Message;
+import com.example.demo.models.User;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 @RestController
 public class RestFullController {
@@ -92,16 +97,18 @@ public class RestFullController {
         }
     }
 
-    @PostMapping(value = "/authorization", params = { "id", "password" })
-    public ResponseEntity<String> authorization(@RequestParam("id") String id,
+    // requests.post("http://localhost:8080/authorization",data={"userId": "test1","password": "1"}).text
+    @PostMapping(value = "/authorization", params = { "userId", "password" })
+    public ResponseEntity<String> authorization(@RequestParam("userId") String userId,
             @RequestParam("password") String password) {
         User currentUser = usersArrayList.stream()
-                .filter(user -> user.getId().equals(id) && user.getPassword().equals(password)).findFirst()
+                .filter(user -> user.getId().equals(userId) && user.getPassword().equals(password)).findFirst()
                 .orElse(null);
         return (currentUser == null) ? new ResponseEntity<String>("No user found", HttpStatus.UNAUTHORIZED)
-                : new ResponseEntity<String>(currentUser.isAdmin().toString(), HttpStatus.OK);
+                : new ResponseEntity<String>(gson.toJson(currentUser), HttpStatus.OK);
     }
 
+    // requests.post("http://localhost:8080/registration", data={"name": "test","password": "0"}).text
     @PostMapping(value = "/registration", params = { "name", "password" })
     public ResponseEntity<String> registration(@RequestParam("name") String name,
             @RequestParam("password") String password) {
@@ -109,12 +116,16 @@ public class RestFullController {
         User newUser = new User(id, false, name, password);
         usersArrayList.add(newUser);
         updateDB("users");
-        return authorization(id, password);
+        return new ResponseEntity<String>(gson.toJson(newUser), HttpStatus.OK);
     }
 
+    // requests.post("http://localhost:8080/createNewChat", data={"userId1":"test1","userId2": "test2"}).text 
     @PostMapping(value = "/createNewChat", params = { "userId1", "userId2" })
     public ResponseEntity<String> createNewChat(@RequestParam("userId1") String userId1,
             @RequestParam("userId2") String userId2) {
+        if (userId1.equals(userId2)) {
+            return new ResponseEntity<String>("You can't create chat with yourself", HttpStatus.BAD_REQUEST);
+        }
         User user1, user2 = null;
         try {
             user1 = findInListById(usersArrayList, userId1);
@@ -131,6 +142,7 @@ public class RestFullController {
         return new ResponseEntity<String>(newChat.id, HttpStatus.OK);
     }
 
+    // requests.post("http://localhost:8080/createNewMessage", data={"userId1":"test1","userId2": "test2","text":"TEXT","chatId":"test"}).text 
     @PostMapping(value = "/createNewMessage", params = { "userId1", "userId2",
             "text", "chatId" })
     public ResponseEntity<String> createNewMessage(@RequestParam("userId1") String userId1,
@@ -154,38 +166,47 @@ public class RestFullController {
         return new ResponseEntity<String>("PLACEHOLDER", HttpStatus.OK);
     }
 
-    // Методы админа
+    /* Admin-only methods */
+    // requests.get("http://localhost:8080/getAllUsers").text
     @GetMapping(value = "/getAllUsers")
     public ArrayList<User> getAllUsers() {
         return usersArrayList;
     }
 
+    // requests.get("http://localhost:8080/getAllChats").text
     @GetMapping(value = "/getAllChats")
     public ArrayList<Chat> getAllChats() {
         return chatsArrayList;
     }
 
+    // requests.get("http://localhost:8080/getMessageByText",params={"text":"TE"}).text
     @GetMapping(value = "/getMessageByText", params = { "text" })
     public ArrayList<Message> getMessageByText(@RequestParam("text") String text) {
-        return (ArrayList<Message>)  messagesArrayList.stream().filter(message -> message.getText().contains(text))
+        return (ArrayList<Message>) messagesArrayList.stream().filter(message -> message.getText().contains(text))
                 .collect(Collectors.toList());
     }
 
-    // Admin and user methods, although User is handicapped at frontend
-    @GetMapping(value = "/getAllCMessagesByChat", params = { "chatId" })
-    public ArrayList<Message> getAllCMessagesByChat(@RequestParam("chatId") String chatId) {
+    /* Admin and user methods, although User is handicapped at frontend */
+
+    // requests.get("http://localhost:8080/getAllMessagesByChat",params={"chatId":"test1"}).text
+    @GetMapping(value = "/getAllMessagesByChat", params = { "chatId" })
+    public ArrayList<Message> getAllMessagesByChat(@RequestParam("chatId") String chatId) {
         ArrayList<String> messagesIds = findInListById(chatsArrayList, chatId).getMessagesIds();
+        // if(messagesIds.isEmpty()){ return new ArrayList<Message>();}
         return (ArrayList<Message>) messagesArrayList.stream().filter(message -> messagesIds.contains(message.id))
                 .collect(Collectors.toList());
     }
 
+    // requests.get("http://localhost:8080/getAllChatsByUser",params={"userId":"test1"}).text
     @GetMapping(value = "/getAllChatsByUser", params = { "userId" })
     public ArrayList<Chat> getAllChatsByUser(@RequestParam("userId") String userId) {
         ArrayList<String> chatsIds = findInListById(usersArrayList, userId).getChatsIds();
+        // if(chatsIds.isEmpty()){ return new ArrayList<Chat>();}
         return (ArrayList<Chat>) chatsArrayList.stream().filter(chat -> chatsIds.contains(chat.id))
                 .collect(Collectors.toList());
     }
 
+    // requests.delete("http://localhost:8080/deleteUserData", params={"userId":"test1"}).text
     @DeleteMapping(value = "/deleteUserData", params = { "userId" })
     public ResponseEntity<String> deleteUserData(@RequestParam("userId") String userId) {
         // this basically means that if nothing in usersArrayList is deleted, then
@@ -202,6 +223,7 @@ public class RestFullController {
         return new ResponseEntity<String>("Successfully deleted data for user " + userId, HttpStatus.OK);
     }
 
+    // requests.delete("http://localhost:8080/deleteMessage",params={"messageId":"M655e9c66-c622-4b08-99b0-d409a4ae0e53"}).text
     @DeleteMapping(value = "/deleteMessage", params = { "messageId" })
     public ResponseEntity<String> deleteMessage(@RequestParam("messageId") String messageId) {
         Message message = null;
@@ -229,6 +251,21 @@ public class RestFullController {
         return new ResponseEntity<String>("Successfully deleted message " + messageId, HttpStatus.OK);
     }
 
+    // requests.post("http://localhost:8080/hideMessage",data={"messageId":"M655e9c66-c622-4b08-99b0-d409a4ae0e53"}).text
+    @PostMapping(value = "/hideMessage", params = { "messageId" })
+    public ResponseEntity<String> hideMessage(@RequestParam("messageId") String messageId) {
+        Message message = null;
+        try {
+            message = findInListById(messagesArrayList, messageId);
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<String>("No message found", HttpStatus.BAD_REQUEST);
+        }
+        message.setDeleted(true);
+        updateDB("messages");
+        return new ResponseEntity<String>("Successfully hidden message " + messageId, HttpStatus.OK);
+    }
+
+    // requests.patch("http://localhost:8080/patchPassword",params={"userId":"test1","oldPassword":"1","newPassword":"new1"}).text
     @PatchMapping(value = "/patchPassword", params = { "userId", "oldPassword", "newPassword"
     })
     public ResponseEntity<String> patchPassword(@RequestParam("userId") String userId,
