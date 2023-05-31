@@ -1,0 +1,29 @@
+[
+    {
+        "admin": true,
+        "name": "name1",
+        "password": "1",
+        "chatsIds": [
+            "test1",
+            "test2"
+        ],
+        "id": "test1"
+    },
+    {
+        "admin": false,
+        "name": "name2",
+        "password": "2",
+        "chatsIds": [
+            "test1",
+            "test2"
+        ],
+        "id": "test2"
+    },
+    {
+        "admin": false,
+        "name": "rtwetw",
+        "password": "rwer",
+        "chatsIds": [],
+        "id": "Ua91f511e-1abe-4cd1-bc12-bbae88374c0e"
+    }
+]
